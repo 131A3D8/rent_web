@@ -1,17 +1,18 @@
 <template>
-  <view class="content">
-    <text class="title">用户注册</text>
-    <!-- 这里可以添加注册表单 -->
-<!-- <form @submit.prevent="handleSubmit">
-      <input type="text" v-model="username" placeholder="用户名" required />
-      <input type="password" v-model="password" placeholder="密码" required />
-      <button type="submit" class="button">注册</button>
-    </form>-->
-	<div class = "register-container">
-		<button class=""></button>
-	</div>
+  <view class="container">
+    <view class="register-box">
+      <view class="form-group">
+        <input v-model="username" placeholder="请输入用户名" class="input" />
+      </view>
+      <view class="form-group">
+        <input v-model="password" type="password" placeholder="请输入密码" class="input" password />
+      </view>
+      <button @click="register" class="btn">注册</button>
+
+      <!-- 提示信息 -->
+      <text v-if="message" class="message">{{ message }}</text>
+    </view>
   </view>
-  <div class="background-container"></div>
 </template>
 
 <script>
@@ -19,72 +20,106 @@ export default {
   data() {
     return {
       username: '',
-      password: ''
+      password: '',
+      message: ''
     };
   },
   methods: {
-    handleSubmit() {
-      // 处理注册逻辑
-      console.log('用户名:', this.username);
-      console.log('密码:', this.password);
-      // 可以在这里发送请求到服务器
+    async register() {
+      if (!this.username || !this.password) {
+        this.message = '用户名和密码不能为空';
+        return;
+      }
+
+      try {
+        const res = await uni.request({
+          url: 'http://localhost:8080/user/add',
+          method: 'POST',
+          data: {
+            username: this.username,
+            password: this.password
+          },
+          header: {
+            'content-type': 'application/json'
+          }
+        });
+
+        // 正常响应处理
+        const { data } = res;
+
+        if (data === "添加成功") {
+          this.message = '注册成功';
+          uni.showToast({ title: '注册成功', icon: 'success' });
+          setTimeout(() => {
+            uni.navigateTo({ url: '/pages/login/loginUser' });
+          }, 1000);
+        } else if (data === "添加失败") {
+          this.message = '注册失败，请检查输入的信息';
+        } else {
+          this.message = '未知错误';
+        }
+
+      } catch (err) {
+        console.error('请求失败:', err);
+        this.message = '网络请求失败，请重试';
+      }
     }
   }
 };
 </script>
 
-<style scoped>
-.content {
+<style>
+/* 容器设置为flex布局，使内容垂直和水平居中 */
+.container {
+	background-image: url('static/register.png'); /* 替换为你的图片URL */
   display: flex;
-  flex-direction: column;
-  align-items: center;
   justify-content: center;
-  height: 100vh;
+  align-items: center;
+  height: 100vh; /* 设置高度为视窗高度 */
+  background-color: #f0f0f0; /* 可选背景颜色 */
+  opacity: 0.7;
 }
 
-.title {
-  font-size: 36px;
-  margin-bottom: 20px;
+/* 注册框容器 */
+.register-box {
+  width: 80%; /* 根据屏幕大小自适应宽度 */
+  max-width: 400px; /* 最大宽度 */
+  padding: 40rpx;
+  background-color: white;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1); /* 添加阴影效果 */
+  border-radius: 10px;
 }
 
-form {
-  display: flex;
-  flex-direction: column;
-  width: 300px;
+.form-group {
+  margin-bottom: 30rpx;
 }
 
-input {
-  margin-bottom: 10px;
-  padding: 10px;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-}
-
-.button {
-  margin-top: 10px;
-  padding: 10px 20px;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
+/* 调整输入框样式 */
+.input {
   width: 100%;
-  background-color: #007bff;
+  border: 1px solid #ccc;
+  padding: 25rpx; /* 增加内边距 */
+  font-size: 32rpx; /* 增大字体大小 */
+  box-sizing: border-box;
+  height: auto; /* 根据内容自动调整高度 */
+  border-radius: 6rpx; /* 圆角 */
+}
+
+.btn {
+  width: 100%;
+  background-color: #07c160;
   color: white;
-  font-size: 16px;
+  padding: 25rpx; /* 增加按钮内边距 */
+  font-size: 32rpx; /* 增大按钮文字大小 */
+  border: none;
+  border-radius: 6rpx; /* 圆角 */
 }
 
-.button:hover {
-  background-color: #0056b3;
-}
-
-.background-container {
-  background-image: url('static/2.jpg'); /* 图片URL */
-  background-size: cover; /* 背景图片覆盖整个容器 */
-  background-position: center; /* 背景图片居中显示 */
-  height: 100vh; /* 容器高度占满整个视口 */
-  width: 100vw; /* 容器宽度占满整个视口 */
-  position: fixed; /* 固定定位，覆盖整个视口 */
-  top: 0;
-  left: 0;
-  z-index: -1; /* 确保在 content 之下 */
+.message {
+  margin-top: 20rpx;
+  color: red;
+  display: block;
+  text-align: center;
+  font-size: 28rpx; /* 调整提示信息字体大小 */
 }
 </style>

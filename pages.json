@@ -25,7 +25,13 @@
 			}
 		},
 		{
-			"path": "pages/user/user",
+			"path": "pages/user/rentuser",
+			"style": {
+				"navigationBarTitleText": "欢迎"
+			}
+		},
+		{
+			"path": "pages/user/addrent",
 			"style": {
 				"navigationBarTitleText": "欢迎"
 			}

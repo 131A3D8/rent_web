@@ -1,21 +1,19 @@
 <template>
   <div class="background-container"></div>
-  <div class="login-container">
-    <form @submit.prevent="handleLogin">
-      <h2>登录</h2>
-      <div class="input-group">
-        <label for="username">用户名:</label>
-        <input type="text" id="username" v-model="username" required />
-      </div>
-      <div class="input-group">
-        <label for="password">密码:</label>
-        <input type="password" id="password" v-model="password" required />
-      </div>
-      <button type="submit" :disabled="isLoading">{{ isLoading ? '正在登录...' : '登录' }}</button>
-      <p v-if="errorMessage" class="error-message">{{ errorMessage }}</p>
-      <router-link to="/pages/login/registerUser" class="register-link">注册</router-link>
-    </form>
-  </div>
+  <view class="container">
+    <view class="login-box">
+      <view class="form-group">
+        <input v-model="username" placeholder="请输入用户名" class="input" />
+      </view>
+      <view class="form-group">
+        <input v-model="password" type="password" placeholder="请输入密码" class="input" password />
+      </view>
+      <button @click="login" class="btn">登录</button>
+
+      <!-- 提示信息 -->
+      <text v-if="message" class="message">{{ message }}</text>
+    </view>
+  </view>
 </template>
 
 <script>
@@ -24,47 +22,56 @@ export default {
     return {
       username: '',
       password: '',
-      isLoading: false,
-      errorMessage: ''
+      message: ''
     };
   },
   methods: {
-    async handleLogin() {
-      console.log("Login button clicked, starting fetch request..."); // 调试信息：按钮点击
-      this.isLoading = true;
-      this.errorMessage = '';
+    async login() {
+      if (!this.username || !this.password) {
+        this.message = '用户名和密码不能为空';
+        return;
+      }
+
       try {
-        console.log("Preparing to send fetch request..."); // 调试信息：准备发送请求
-        const response = await fetch('http://localhost:8080/user/login', {
+        const res = await uni.request({
+          url: 'http://localhost:8080/user/login',
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
+          data: {
+            username: this.username,
+            password: this.password
           },
-          body: JSON.stringify({ "username": this.username, "password": this.password })
+          header: {
+            'content-type': 'application/json'
+          }
         });
-        console.log("Response received:", response); // 调试信息：响应接收
-        if (!response.ok) {
-          throw new Error('Network response was not ok ' + response.statusText);
+
+        // 处理响应
+        const { data } = res;
+
+        if (data === "登录成功") {
+          this.message = '登录成功';
+          uni.showToast({ title: '登录成功', icon: 'success' });
+          
+          // 跳转到 rentuser 页面并携带 username 参数
+          uni.navigateTo({
+            url: `/pages/user/rentuser?username=${encodeURIComponent(this.username)}`
+          });
+
+        } else if (data === "登录失败") {
+          this.message = '登录失败，请检查用户名或密码';
+        } else {
+          this.message = '未知错误';
         }
-        const data = await response.json();
-        console.log("Data parsed:", data); // 调试信息：数据解析
-        // 登录成功，可以存储 token 或其他信息
-        localStorage.setItem('token', data.token);
-        // 跳转到用户页面
-        this.$router.push('/pages/user/user');
-      } catch (error) {
-        console.error("Error logging in:", error); // 调试信息：错误处理
-        this.errorMessage = "登录失败，请检查用户名和密码";
-      } finally {
-        this.isLoading = false;
-        console.log("Login process completed."); // 调试信息：登录过程完成
+      } catch (err) {
+        console.error(err);
+        this.message = '网络请求失败，请重试';
       }
     }
   }
 };
 </script>
 
-<style scoped>
+<style>
 .background-container {
   background-image: url('static/login.png'); /* 替换为你的图片URL */
   background-size: cover; /* 背景图片覆盖整个容器 */
@@ -77,78 +84,51 @@ export default {
   z-index: -1; /* 确保在 login-container 之下 */
 }
 
-.login-container {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background-color: rgba(255, 255, 255, 0.7); /* 半透明白色背景 */
-  padding: 20px;
-  border-radius: 8px;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-  z-index: 1; /* 确保在背景之上 */
-  width: 300px; /* 设置固定的宽度以便更好地控制布局 */
-}
-
-h2 {
-  text-align: center;
-  margin-bottom: 20px;
-}
-
-.input-group {
+.container {
   display: flex;
+  justify-content: center;
   align-items: center;
-  margin-bottom: 15px;
-  caret-color: #00be7f;
+  height: 100vh;
 }
 
-.input-group label {
-  margin-right: 10px;
-  flex-shrink: 0;
+.login-box {
+  width: 80%;
+  max-width: 400px;
+  padding: 40rpx;
+  background-color: white;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  border-radius: 10px;
 }
 
-.input-group input {
-  flex-grow: 1;
-  height: 40px; /* 增加输入框的高度 */
-  padding: 8px;
-  box-sizing: border-box;
-  border: 1px solid #000000;
-  border-radius: 4px;
+.form-group {
+  margin-bottom: 30rpx;
 }
 
-button {
+.input {
   width: 100%;
-  padding: 10px;
-  background-color: #007bff;
+  border: 1px solid #ccc;
+  padding: 25rpx;
+  font-size: 32rpx;
+  box-sizing: border-box;
+  height: auto;
+  border-radius: 6rpx;
+}
+
+.btn {
+  width: 100%;
+  background-color: #07c160;
   color: white;
+  padding: 25rpx;
+  font-size: 32rpx;
   border: none;
-  border-radius: 4px;
-  cursor: pointer;
+  border-radius: 6rpx;
 }
 
-button:disabled {
-  background-color: #cccccc;
-  cursor: not-allowed;
-}
-
-.error-message {
+.message {
+  margin-top: 20rpx;
   color: red;
-  margin-top: 10px;
-  text-align: center;
-}
-
-.register-link {
   display: block;
-  text-align: right;
-  margin-top: 10px;
-  color: #007bff;
-  text-decoration: none;
-}
-
-.register-link:hover {
-  text-decoration: underline;
+  text-align: center;
+  font-size: 28rpx;
 }
 </style>
-
-
-
